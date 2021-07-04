@@ -12,7 +12,6 @@ import (
 	"golang.org/x/text/width"
 )
 
-// Width returns fixed-width width of byte slice.
 func Width(b []byte) (n int) {
 	for len(b) > 0 {
 		r, size := utf8.DecodeRune(b)
@@ -28,7 +27,6 @@ func ByteWidth(b byte) int {
 	return RuneWidth(rune(b))
 }
 
-// RuneWidth returns fixed-width width of rune.
 func RuneWidth(r rune) int {
 	switch {
 	case unicode.Is(unicode.Mn, r), !unicode.IsGraphic(r):
@@ -45,7 +43,6 @@ func RuneWidth(r rune) int {
 	}
 }
 
-// StringWidth returns fixed-width width of string.
 func StringWidth(s string) (n int) {
 	for _, r := range s {
 		n += RuneWidth(r)
