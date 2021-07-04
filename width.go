@@ -17,10 +17,6 @@ func Width(b []byte) (n int) {
 	for len(b) > 0 {
 		r, size := utf8.DecodeRune(b)
 
-		if r == utf8.RuneError {
-			return -1
-		}
-
 		n += RuneWidth(r)
 
 		b = b[size:]
