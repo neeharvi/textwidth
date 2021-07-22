@@ -9,7 +9,7 @@ import (
 
 func BenchmarkStringWidth(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		textwidth.StringWidth(stringwidthtests[i%len(stringwidthtests)].in)
+		textwidth.WidthString(stringwidthtests[i%len(stringwidthtests)].in)
 	}
 }
 
@@ -21,7 +21,7 @@ func BenchmarkStringWidthOriginal(b *testing.B) {
 
 func BenchmarkRuneWidth(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		textwidth.RuneWidth(runewidthtests[i%len(runewidthtests)].in)
+		textwidth.WidthRune(runewidthtests[i%len(runewidthtests)].in)
 	}
 }
 

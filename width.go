@@ -7,45 +7,50 @@ package textwidth
 
 import (
 	"unicode"
-	"unicode/utf8"
+	"unsafe"
 
 	"golang.org/x/text/width"
 )
 
-func Width(b []byte) (n int) {
-	for len(b) > 0 {
-		r, size := utf8.DecodeRune(b)
+var table = [...]int{
+	width.EastAsianWide: 2, width.EastAsianFullwidth: 2,
+	width.EastAsianNarrow: 1, width.EastAsianHalfwidth: 1, width.EastAsianAmbiguous: 1, width.Neutral: 1,
+}
 
-		n += RuneWidth(r)
+func WidthByte(b byte) int {
+	return WidthRune(rune(b))
+}
 
-		b = b[size:]
+func WidthRune(r rune) int {
+	if !unicode.IsGraphic(r) || unicode.Is(unicode.Mn, r) {
+		return 0
+	} else {
+		return table[width.LookupRune(r).Kind()]
+	}
+}
+
+func WidthBytes(s []byte) (n int) {
+	return WidthString(*(*string)(unsafe.Pointer(&s)))
+}
+
+func WidthRunes(s []rune) (n int) {
+	for _, r := range s {
+		if !unicode.IsGraphic(r) || unicode.Is(unicode.Mn, r) {
+			// no-op //
+		} else {
+			n += table[width.LookupRune(r).Kind()]
+		}
 	}
 	return n
 }
 
-func ByteWidth(b byte) int {
-	return RuneWidth(rune(b))
-}
-
-func RuneWidth(r rune) int {
-	switch {
-	case unicode.Is(unicode.Mn, r), !unicode.IsGraphic(r):
-		return 0
-	default:
-		switch width.LookupRune(r).Kind() {
-		case width.EastAsianWide, width.EastAsianFullwidth:
-			return 2
-		case width.EastAsianNarrow, width.EastAsianHalfwidth, width.EastAsianAmbiguous, width.Neutral:
-			return 1
-		default:
-			return 0
-		}
-	}
-}
-
-func StringWidth(s string) (n int) {
+func WidthString(s string) (n int) {
 	for _, r := range s {
-		n += RuneWidth(r)
+		if !unicode.IsGraphic(r) || unicode.Is(unicode.Mn, r) {
+			// no-op //
+		} else {
+			n += table[width.LookupRune(r).Kind()]
+		}
 	}
 	return n
 }
