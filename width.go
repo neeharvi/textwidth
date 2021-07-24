@@ -22,7 +22,7 @@ func WidthByte(b byte) int {
 }
 
 func WidthRune(r rune) int {
-	if !unicode.IsGraphic(r) || unicode.Is(unicode.Mn, r) {
+	if unicode.Is(unicode.Mn, r) || !unicode.IsGraphic(r) {
 		return 0
 	} else {
 		return table[width.LookupRune(r).Kind()]
@@ -35,7 +35,7 @@ func WidthBytes(s []byte) (n int) {
 
 func WidthRunes(s []rune) (n int) {
 	for _, r := range s {
-		if !unicode.IsGraphic(r) || unicode.Is(unicode.Mn, r) {
+		if unicode.Is(unicode.Mn, r) || !unicode.IsGraphic(r) {
 			// no-op //
 		} else {
 			n += table[width.LookupRune(r).Kind()]
@@ -46,7 +46,7 @@ func WidthRunes(s []rune) (n int) {
 
 func WidthString(s string) (n int) {
 	for _, r := range s {
-		if !unicode.IsGraphic(r) || unicode.Is(unicode.Mn, r) {
+		if unicode.Is(unicode.Mn, r) || !unicode.IsGraphic(r) {
 			// no-op //
 		} else {
 			n += table[width.LookupRune(r).Kind()]
