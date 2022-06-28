@@ -1,7 +1,11 @@
 // textwidth provides functions for getting the fixed-width width of unicode
 // byte slices, runes and strings.
 //
+// Set the cjk flag to treat EastAsianAmbiguous as 2.
+//
 // https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms#In_Unicode
+// https://unicode.org/reports/tr11/
+// https://pkg.go.dev/golang.org/x/text/width
 //
 package textwidth
 
@@ -9,48 +13,65 @@ import (
 	"unicode"
 	"unsafe"
 
+	"github.com/rivo/uniseg"
 	"golang.org/x/text/width"
 )
 
-var table = [...]int{
-	width.EastAsianWide: 2, width.EastAsianFullwidth: 2,
-	width.EastAsianNarrow: 1, width.EastAsianHalfwidth: 1, width.EastAsianAmbiguous: 1, width.Neutral: 1,
+func WidthByteCJK(b byte, cjk bool) int {
+	return WidthRuneCJK(rune(b), cjk)
 }
 
-func WidthByte(b byte) int {
-	return WidthRune(rune(b))
-}
-
-func WidthRune(r rune) int {
-	if unicode.Is(unicode.Mn, r) || !unicode.IsGraphic(r) {
+func WidthRuneCJK(r rune, cjk bool) int {
+	// TODO: better way?
+	if !unicode.IsGraphic(r) || unicode.Is(unicode.Mn, r) {
 		return 0
-	} else {
-		return table[width.LookupRune(r).Kind()]
+	}
+	//table := [...]int{
+	//	width.EastAsianWide: 2, width.EastAsianFullwidth: 2,
+	//	width.EastAsianAmbiguous: 1,
+	//	width.EastAsianNarrow:    1, width.EastAsianHalfwidth: 1, width.Neutral: 1,
+	//}
+	switch width.LookupRune(r).Kind() {
+	case width.EastAsianWide, width.EastAsianFullwidth:
+		return 2
+	case width.EastAsianAmbiguous:
+		if cjk {
+			return 2
+		} else {
+			return 1
+		}
+	default:
+		return 1
 	}
 }
 
-func WidthBytes(s []byte) (n int) {
-	return WidthString(*(*string)(unsafe.Pointer(&s)))
-}
-
-func WidthRunes(s []rune) (n int) {
-	for _, r := range s {
-		if unicode.Is(unicode.Mn, r) || !unicode.IsGraphic(r) {
-			// no-op //
-		} else {
-			n += table[width.LookupRune(r).Kind()]
+func WidthGraphemeCJK(rs []rune, cjk bool) (n int) {
+	// max width
+	for _, r := range rs {
+		w := WidthRuneCJK(r, cjk)
+		if w > n {
+			n = w
 		}
 	}
-	return n
+	return
 }
 
-func WidthString(s string) (n int) {
-	for _, r := range s {
-		if unicode.Is(unicode.Mn, r) || !unicode.IsGraphic(r) {
-			// no-op //
-		} else {
-			n += table[width.LookupRune(r).Kind()]
-		}
-	}
-	return n
+func WidthBytesCJK(s []byte, cjk bool) (n int) {
+	return WidthStringCJK(*(*string)(unsafe.Pointer(&s)), cjk)
 }
+
+func WidthStringCJK(s string, cjk bool) (n int) {
+	// TODO: Is it necessary to iterate over graphemes here?
+	//       mattn/go-runewidth does it like this.
+	gs := uniseg.NewGraphemes(s)
+	for gs.Next() {
+		n += WidthGraphemeCJK(gs.Runes(), cjk)
+	}
+	return
+}
+
+func WidthByte(b byte) int       { return WidthByteCJK(b, false) }
+func WidthRune(r rune) int       { return WidthRuneCJK(r, false) }
+func WidthGrapheme(g []rune) int { return WidthGraphemeCJK(g, false) }
+func WidthBytes(s []byte) int    { return WidthBytesCJK(s, false) }
+func WidthString(s string) int   { return WidthStringCJK(s, false) }
